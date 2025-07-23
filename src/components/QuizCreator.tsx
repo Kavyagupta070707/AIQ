@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Sparkles, ArrowLeft } from "lucide-react";
+import { Loader2, Sparkles, ArrowLeft, Key } from "lucide-react";
 import { toast } from "sonner";
+import OpenAI from "openai";
 
 interface QuizCreatorProps {
   onBack: () => void;
@@ -13,7 +14,22 @@ interface QuizCreatorProps {
 
 const QuizCreator = ({ onBack, onQuizGenerated }: QuizCreatorProps) => {
   const [topic, setTopic] = useState("");
+  const [apiKey, setApiKey] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+
+  useEffect(() => {
+    const savedApiKey = localStorage.getItem('openai_api_key');
+    if (savedApiKey) {
+      setApiKey(savedApiKey);
+    }
+  }, []);
+
+  const saveApiKey = () => {
+    if (apiKey.trim()) {
+      localStorage.setItem('openai_api_key', apiKey.trim());
+      toast.success("API key saved successfully!");
+    }
+  };
 
   const generateQuiz = async () => {
     if (!topic.trim()) {
@@ -21,57 +37,77 @@ const QuizCreator = ({ onBack, onQuizGenerated }: QuizCreatorProps) => {
       return;
     }
 
+    if (!apiKey.trim()) {
+      toast.error("Please enter your OpenAI API key");
+      return;
+    }
+
     setIsGenerating(true);
     
-    // Simulate AI generation delay
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Mock AI-generated quiz
-    const mockQuiz = {
-      id: Math.random().toString(36).substr(2, 9),
-      topic,
-      questions: [
-        {
-          id: 1,
-          question: `What is the most important concept in ${topic}?`,
-          options: [
-            "Fundamental principle",
-            "Basic structure", 
-            "Core methodology",
-            "Primary framework"
-          ],
-          correctAnswer: 0
-        },
-        {
-          id: 2,
-          question: `Which best describes ${topic}?`,
-          options: [
-            "Complex system",
-            "Simple process",
-            "Innovative approach", 
-            "Traditional method"
-          ],
-          correctAnswer: 2
-        },
-        {
-          id: 3,
-          question: `What is a key benefit of understanding ${topic}?`,
-          options: [
-            "Improved efficiency",
-            "Better outcomes",
-            "Enhanced knowledge",
-            "All of the above"
-          ],
-          correctAnswer: 3
-        }
-      ],
-      createdAt: new Date().toISOString(),
-      participants: []
-    };
+    try {
+      const openai = new OpenAI({
+        apiKey: apiKey,
+        dangerouslyAllowBrowser: true
+      });
 
-    setIsGenerating(false);
-    toast.success("Quiz generated successfully!");
-    onQuizGenerated(mockQuiz);
+      const prompt = `Create a quiz about "${topic}" with exactly 10 multiple choice questions. Each question should have 4 options. Return the response in this exact JSON format:
+      {
+        "questions": [
+          {
+            "question": "Question text here?",
+            "options": ["Option A", "Option B", "Option C", "Option D"],
+            "correctAnswer": 0
+          }
+        ]
+      }
+      
+      Make sure the questions are educational, varied in difficulty, and cover different aspects of the topic. The correctAnswer should be the index (0-3) of the correct option.`;
+
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4.1-2025-04-14",
+        messages: [
+          {
+            role: "system",
+            content: "You are a quiz generator. Always respond with valid JSON in the exact format requested."
+          },
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 2000
+      });
+
+      const responseText = completion.choices[0].message.content;
+      const quizData = JSON.parse(responseText || "{}");
+      
+      if (!quizData.questions || quizData.questions.length !== 10) {
+        throw new Error("Invalid quiz format received");
+      }
+
+      const quiz = {
+        id: Math.random().toString(36).substr(2, 9),
+        topic,
+        questions: quizData.questions.map((q: any, index: number) => ({
+          id: index + 1,
+          question: q.question,
+          options: q.options,
+          correctAnswer: q.correctAnswer
+        })),
+        createdAt: new Date().toISOString(),
+        participants: []
+      };
+
+      setIsGenerating(false);
+      toast.success("Quiz generated successfully!");
+      onQuizGenerated(quiz);
+      
+    } catch (error) {
+      setIsGenerating(false);
+      console.error("Error generating quiz:", error);
+      toast.error("Failed to generate quiz. Please check your API key and try again.");
+    }
   };
 
   return (
@@ -98,6 +134,33 @@ const QuizCreator = ({ onBack, onQuizGenerated }: QuizCreatorProps) => {
           
           <CardContent className="space-y-6">
             <div className="space-y-2">
+              <Label htmlFor="apiKey" className="text-base font-medium">
+                OpenAI API Key
+              </Label>
+              <div className="flex gap-2">
+                <Input
+                  id="apiKey"
+                  type="password"
+                  placeholder="sk-..."
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  className="flex-1"
+                  disabled={isGenerating}
+                />
+                <Button 
+                  onClick={saveApiKey}
+                  variant="outline"
+                  disabled={isGenerating || !apiKey.trim()}
+                >
+                  <Key className="w-4 h-4" />
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Your API key is stored locally and never sent to our servers
+              </p>
+            </div>
+
+            <div className="space-y-2">
               <Label htmlFor="topic" className="text-base font-medium">
                 Quiz Topic
               </Label>
@@ -113,7 +176,7 @@ const QuizCreator = ({ onBack, onQuizGenerated }: QuizCreatorProps) => {
 
             <Button 
               onClick={generateQuiz}
-              disabled={isGenerating || !topic.trim()}
+              disabled={isGenerating || !topic.trim() || !apiKey.trim()}
               variant="hero"
               size="lg"
               className="w-full"
@@ -135,7 +198,7 @@ const QuizCreator = ({ onBack, onQuizGenerated }: QuizCreatorProps) => {
             <div className="bg-muted rounded-lg p-4 space-y-2">
               <h4 className="font-semibold text-sm">What you'll get:</h4>
               <ul className="text-sm text-muted-foreground space-y-1">
-                <li>• 3-5 AI-generated questions</li>
+                <li>• 10 AI-generated questions</li>
                 <li>• Multiple choice options</li>
                 <li>• Unique QR code for sharing</li>
                 <li>• Real-time participation tracking</li>
