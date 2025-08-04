@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Sparkles, ArrowLeft, Key } from "lucide-react";
 import { toast } from "sonner";
-import OpenAI from "openai";
+// import OpenAI from "openai";
 
 interface QuizCreatorProps {
   onBack: () => void;
@@ -14,22 +14,11 @@ interface QuizCreatorProps {
 
 const QuizCreator = ({ onBack, onQuizGenerated }: QuizCreatorProps) => {
   const [topic, setTopic] = useState("");
-  const [apiKey, setApiKey] = useState("");
+  // Get Gemini API key from .env file
+  const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
   const [isGenerating, setIsGenerating] = useState(false);
 
-  useEffect(() => {
-    const savedApiKey = localStorage.getItem('openai_api_key');
-    if (savedApiKey) {
-      setApiKey(savedApiKey);
-    }
-  }, []);
-
-  const saveApiKey = () => {
-    if (apiKey.trim()) {
-      localStorage.setItem('openai_api_key', apiKey.trim());
-      toast.success("API key saved successfully!");
-    }
-  };
+  // Removed localStorage and input logic for API key
 
   const generateQuiz = async () => {
     if (!topic.trim()) {
@@ -38,18 +27,12 @@ const QuizCreator = ({ onBack, onQuizGenerated }: QuizCreatorProps) => {
     }
 
     if (!apiKey.trim()) {
-      toast.error("Please enter your OpenAI API key");
+      toast.error("OpenAI API key is missing. Please set VITE_OPENAI_API_KEY in your .env file.");
       return;
     }
 
     setIsGenerating(true);
-    
     try {
-      const openai = new OpenAI({
-        apiKey: apiKey,
-        dangerouslyAllowBrowser: true
-      });
-
       const prompt = `Create a quiz about "${topic}" with exactly 10 multiple choice questions. Each question should have 4 options. Return the response in this exact JSON format:
       {
         "questions": [
@@ -63,27 +46,61 @@ const QuizCreator = ({ onBack, onQuizGenerated }: QuizCreatorProps) => {
       
       Make sure the questions are educational, varied in difficulty, and cover different aspects of the topic. The correctAnswer should be the index (0-3) of the correct option.`;
 
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4.1-2025-04-14",
-        messages: [
-          {
-            role: "system",
-            content: "You are a quiz generator. Always respond with valid JSON in the exact format requested."
-          },
-          {
-            role: "user",
-            content: prompt
-          }
-        ],
-        temperature: 0.7,
-        max_tokens: 2000
+      // Gemini API endpoint for text generation
+      const geminiEndpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+
+      const response = await fetch(`${geminiEndpoint}?key=${apiKey}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          contents: [
+            { parts: [{ text: prompt }] }
+          ]
+        })
       });
 
-      const responseText = completion.choices[0].message.content;
-      const quizData = JSON.parse(responseText || "{}");
-      
+      if (!response.ok) {
+        let errorBody = "";
+        try {
+          errorBody = await response.text();
+        } catch {}
+        console.error(`Gemini API error (${response.status}):`, errorBody);
+        if (response.status === 429) {
+          toast.error("You have exceeded your Gemini quota or rate limit. Please check your usage, wait a few minutes, or upgrade your plan.");
+        } else if (response.status === 401) {
+          toast.error("Invalid Gemini API key. Please check your key and try again.");
+        } else {
+          toast.error("Failed to generate quiz. Please check your Gemini API key and try again.");
+        }
+        setIsGenerating(false);
+        return;
+      }
+      const data = await response.json();
+      // Gemini returns text in data.candidates[0].content.parts[0].text
+      const responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+      let quizData: any = {};
+      try {
+        // Remove markdown code block markers if present
+        let cleanText = responseText.trim();
+        if (cleanText.startsWith('```json')) {
+          cleanText = cleanText.replace(/^```json/, '').replace(/```$/, '').trim();
+        } else if (cleanText.startsWith('```')) {
+          cleanText = cleanText.replace(/^```/, '').replace(/```$/, '').trim();
+        }
+        quizData = JSON.parse(cleanText);
+      } catch (e) {
+        console.error("Failed to parse Gemini response as JSON", responseText);
+        toast.error("Sorry, the quiz could not be generated. Please try again or change your topic.");
+        setIsGenerating(false);
+        return;
+      }
+
       if (!quizData.questions || quizData.questions.length !== 10) {
-        throw new Error("Invalid quiz format received");
+        toast.error("Sorry, the quiz format was invalid. Please try again or change your topic.");
+        setIsGenerating(false);
+        return;
       }
 
       const quiz = {
@@ -102,27 +119,26 @@ const QuizCreator = ({ onBack, onQuizGenerated }: QuizCreatorProps) => {
       setIsGenerating(false);
       toast.success("Quiz generated successfully!");
       onQuizGenerated(quiz);
-      
     } catch (error) {
       setIsGenerating(false);
       console.error("Error generating quiz:", error);
-      toast.error("Failed to generate quiz. Please check your API key and try again.");
+      toast.error("Failed to generate quiz. Please check your Gemini API key and try again.");
     }
   };
 
   return (
-    <div className="min-h-screen bg-background py-20">
-      <div className="container mx-auto px-4 max-w-2xl">
+    <div className="bg-purple-300 min-h-screen h-screen w-full flex items-center justify-center bg-background">
+      <div className="w-full max-w-2xl px-4 flex flex-col items-center justify-center">
         <Button 
           variant="ghost" 
           onClick={onBack}
-          className="mb-8"
+          className="mb-8 self-start"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Home
         </Button>
 
-        <Card className="shadow-soft">
+        <Card className="shadow-soft w-full">
           <CardHeader className="text-center">
             <CardTitle className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
               Create Your Quiz
@@ -131,35 +147,7 @@ const QuizCreator = ({ onBack, onQuizGenerated }: QuizCreatorProps) => {
               Enter any topic and let AI generate engaging questions for you
             </p>
           </CardHeader>
-          
           <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="apiKey" className="text-base font-medium">
-                OpenAI API Key
-              </Label>
-              <div className="flex gap-2">
-                <Input
-                  id="apiKey"
-                  type="password"
-                  placeholder="sk-..."
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  className="flex-1"
-                  disabled={isGenerating}
-                />
-                <Button 
-                  onClick={saveApiKey}
-                  variant="outline"
-                  disabled={isGenerating || !apiKey.trim()}
-                >
-                  <Key className="w-4 h-4" />
-                </Button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Your API key is stored locally and never sent to our servers
-              </p>
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="topic" className="text-base font-medium">
                 Quiz Topic

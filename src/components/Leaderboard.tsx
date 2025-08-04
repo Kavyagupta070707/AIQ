@@ -80,26 +80,25 @@ const Leaderboard = ({ quiz, results, onBack, onNewQuiz }: LeaderboardProps) => 
   const percentageScore = Math.round((results.score / results.totalQuestions) * 100);
 
   return (
-    <div className="min-h-screen bg-background py-20">
-      <div className="container mx-auto px-4 max-w-4xl">
+    <div className="min-h-screen w-full flex items-center justify-center bg-background">
+      <div className="w-full max-w-4xl px-4 flex flex-col items-center justify-start py-8">
         <Button 
           variant="ghost" 
           onClick={onBack}
-          className="mb-8"
+          className="mb-8 self-start"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Take Quiz Again
         </Button>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-8 w-full">
           {/* Personal Results */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-1 flex flex-col justify-start">
             <Card className="shadow-soft bg-gradient-card">
               <CardHeader className="text-center">
                 <CardTitle className="text-2xl font-bold">Your Results</CardTitle>
                 <p className="text-muted-foreground">{quiz.topic}</p>
               </CardHeader>
-              
               <CardContent className="text-center space-y-6">
                 <div className="space-y-2">
                   <div className="text-4xl font-bold text-primary">
@@ -122,7 +121,6 @@ const Leaderboard = ({ quiz, results, onBack, onNewQuiz }: LeaderboardProps) => 
                     <Share2 className="w-4 h-4 mr-2" />
                     Share Results
                   </Button>
-                  
                   <Button onClick={onNewQuiz} variant="hero" className="w-full">
                     Create New Quiz
                   </Button>
@@ -132,8 +130,8 @@ const Leaderboard = ({ quiz, results, onBack, onNewQuiz }: LeaderboardProps) => 
           </div>
 
           {/* Leaderboard */}
-          <div className="lg:col-span-2">
-            <Card className="shadow-soft">
+          <div className="lg:col-span-2 flex flex-col justify-start">
+            <Card className="shadow-soft w-full">
               <CardHeader>
                 <CardTitle className="text-2xl font-bold flex items-center gap-2">
                   <Trophy className="w-6 h-6 text-accent" />
@@ -143,13 +141,11 @@ const Leaderboard = ({ quiz, results, onBack, onNewQuiz }: LeaderboardProps) => 
                   Live rankings for "{quiz.topic}" quiz
                 </p>
               </CardHeader>
-              
-              <CardContent>
+              <CardContent className="overflow-auto max-h-[60vh]">
                 <div className="space-y-3">
                   {allResults.map((result, index) => {
                     const rank = index + 1;
                     const isCurrentUser = result.playerName === results.playerName;
-                    
                     return (
                       <div
                         key={`${result.playerName}-${index}`}
