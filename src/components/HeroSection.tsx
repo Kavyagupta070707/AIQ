@@ -1,9 +1,13 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Brain, QrCode, Users, Trophy } from "lucide-react";
 import heroImage from "@/assets/hero-image.jpg";
+import LoginPage from "../pages/LoginPage";
+import SignupPage from "../pages/SignupPage";
 
-const HeroSection = ({ onGetStarted }: { onGetStarted: () => void }) => {
+const HeroSection = ({ onLogin, onSignup, onLoginSuccess }: { onLogin: () => void, onSignup: () => void, onLoginSuccess: (token: string, userObj: any) => void }) => {
+  const [showAuth, setShowAuth] = useState<"login" | "signup" | null>(null);
   return (
     <div className="min-h-screen h-screen w-full flex items-center justify-center bg-gradient-hero relative overflow-hidden">
       {/* Background decorative elements */}
@@ -31,10 +35,30 @@ const HeroSection = ({ onGetStarted }: { onGetStarted: () => void }) => {
               and watch real-time leaderboards unfold as participants compete.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start mb-12">
-              <Button size="lg" onClick={onGetStarted}>
-                Get Started Free
-              </Button>
+              <Button size="lg" onClick={() => setShowAuth("login")}>Get Started Free</Button>
             </div>
+            {showAuth === "login" && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                <div className="bg-background rounded-lg shadow-lg p-6 w-full max-w-md relative">
+                  <button className="absolute top-2 right-2 text-lg" onClick={() => setShowAuth(null)}>&times;</button>
+                  <LoginPage 
+                    onSignupRedirect={() => setShowAuth("signup")}
+                    onLoginSuccess={(token, userObj) => {
+                      setShowAuth(null);
+                      onLoginSuccess(token, userObj);
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+            {showAuth === "signup" && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+                <div className="bg-background rounded-lg shadow-lg p-6 w-full max-w-md relative">
+                  <button className="absolute top-2 right-2 text-lg" onClick={() => setShowAuth(null)}>&times;</button>
+                  <SignupPage onLoginRedirect={() => setShowAuth("login")} />
+                </div>
+              </div>
+            )}
             {/* Feature highlights */}
             <div className="grid grid-cols-3 gap-6">
               <div className="text-center">

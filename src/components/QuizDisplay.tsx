@@ -1,17 +1,22 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, QrCode, Users, Copy, Share2 } from "lucide-react";
 import { toast } from "sonner";
 import QRCodeGenerator from "./QRCodeGenerator";
 
-interface QuizDisplayProps {
+ interface QuizDisplayProps {
   quiz: any;
   onBack: () => void;
-  onStartQuiz: () => void;
 }
 
-const QuizDisplay = ({ quiz, onBack, onStartQuiz }: QuizDisplayProps) => {
+const QuizDisplay = ({ quiz, onBack }: QuizDisplayProps) => {
+  const navigate = useNavigate();
+  const handleStartQuiz = () => {
+    const quizId = quiz._id || quiz.id;
+    navigate(`/quiz/${quizId}/take`);
+  };
   const [showQRCode, setShowQRCode] = useState(false);
   const quizUrl = `${window.location.origin}/quiz/${quiz.id}`;
 
@@ -31,12 +36,25 @@ const QuizDisplay = ({ quiz, onBack, onStartQuiz }: QuizDisplayProps) => {
       copyToClipboard();
     }
   };
+   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
 
+  const handleNext = () => {
+    if (currentQuestionIndex < quiz.questions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
+    }
+  };
+  const handlePrevious = () => {
+    if (currentQuestionIndex >0) {
+      setCurrentQuestionIndex(prev => prev -1);
+    }
+  };
+
+  const question = quiz.questions[currentQuestionIndex];
   return (
     <div className="min-h-screen bg-background py-20">
       <div className="container mx-auto px-4 max-w-4xl">
-        <Button 
-          variant="ghost" 
+        <Button
+          variant="ghost"
           onClick={onBack}
           className="mb-8"
         >
@@ -55,7 +73,7 @@ const QuizDisplay = ({ quiz, onBack, onStartQuiz }: QuizDisplayProps) => {
                 Your quiz about <span className="font-semibold text-primary">{quiz.topic}</span> is ready to share
               </p>
             </CardHeader>
-            
+
             <CardContent className="space-y-6">
               {/* Quiz Stats */}
               <div className="grid grid-cols-2 gap-4">
@@ -71,15 +89,15 @@ const QuizDisplay = ({ quiz, onBack, onStartQuiz }: QuizDisplayProps) => {
 
               {/* Share Options */}
               <div className="space-y-3">
-                <Button 
+                <Button
                   onClick={() => setShowQRCode(!showQRCode)}
-                  variant="outline" 
+                  variant="outline"
                   className="w-full"
                 >
                   <QrCode className="w-4 h-4 mr-2" />
                   {showQRCode ? "Hide QR Code" : "Show QR Code"}
                 </Button>
-                
+
                 <div className="flex gap-2">
                   <Button onClick={copyToClipboard} variant="outline" className="flex-1">
                     <Copy className="w-4 h-4 mr-2" />
@@ -93,9 +111,9 @@ const QuizDisplay = ({ quiz, onBack, onStartQuiz }: QuizDisplayProps) => {
               </div>
 
               {/* Start Quiz */}
-              <Button onClick={onStartQuiz} variant="hero" className="w-full">
+              <Button onClick={handleStartQuiz} variant="hero" className="w-full">
                 <Users className="w-4 h-4 mr-2" />
-                Preview Quiz
+                Attend Quiz
               </Button>
             </CardContent>
           </Card>
@@ -107,8 +125,8 @@ const QuizDisplay = ({ quiz, onBack, onStartQuiz }: QuizDisplayProps) => {
                 {showQRCode ? "Scan to Join" : "Questions Preview"}
               </CardTitle>
             </CardHeader>
-            
-            <CardContent>
+
+            <CardContent className="h-[350px] flex flex-col justify-between">
               {showQRCode ? (
                 <div className="text-center space-y-4">
                   <QRCodeGenerator value={quizUrl} size={200} />
@@ -120,35 +138,51 @@ const QuizDisplay = ({ quiz, onBack, onStartQuiz }: QuizDisplayProps) => {
                   </div>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  {quiz.questions.map((question: any, index: number) => (
-                    <div key={question.id} className="border rounded-lg p-4">
-                      <h4 className="font-semibold mb-2">
-                        {index + 1}. {question.question}
-                      </h4>
-                      <div className="space-y-1">
-                        {question.options.map((option: string, optIndex: number) => (
-                          <div 
-                            key={optIndex} 
-                            className={`text-sm p-2 rounded ${
-                              optIndex === question.correctAnswer 
-                                ? 'bg-primary/10 text-primary border border-primary/20' 
-                                : 'bg-muted'
+                <div className="space-y-4  " >
+                  <div key={question.id} className="border rounded-lg p-4  h-[270px]">
+                    <h4 className="font-semibold mb-2">
+                      {currentQuestionIndex + 1}. {question.question}
+                    </h4>
+                    <div className="space-y-1">
+                      {question.options.map((option: string, optIndex: number) => (
+                        <div
+                          key={optIndex}
+                          className={`text-sm p-2 rounded ${optIndex === question.correctAnswer
+                              ? "bg-primary/10 text-primary border border-primary/20"
+                              : "bg-muted"
                             }`}
-                          >
-                            {String.fromCharCode(65 + optIndex)}. {option}
-                          </div>
-                        ))}
-                      </div>
+                        >
+
+                          {String.fromCharCode(65 + optIndex)}. {option}
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+
+                  <div className="flex justify-between">
+                    <button
+                      onClick={handlePrevious}
+                      disabled={currentQuestionIndex === 0}
+                      className="bg-primary text-white px-4 py-2 rounded disabled:opacity-50"
+                    >
+                      Previous
+                    </button>
+                    <button
+                      onClick={handleNext}
+                      disabled={currentQuestionIndex === quiz.questions.length - 1}
+                      className="bg-primary text-white px-4 py-2 rounded disabled:opacity-50"
+                    >
+                      Next
+                    </button>
+                  </div>
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </div>
+              
+          </CardContent>
+        </Card>
       </div>
     </div>
+    </div >
   );
 };
 

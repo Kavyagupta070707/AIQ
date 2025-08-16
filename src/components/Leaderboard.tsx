@@ -1,8 +1,10 @@
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Trophy, Medal, Award, ArrowLeft, Share2 } from "lucide-react";
 import { toast } from "sonner";
+import axios from "axios";
 
 interface LeaderboardProps {
   quiz: any;
@@ -12,28 +14,26 @@ interface LeaderboardProps {
 }
 
 const Leaderboard = ({ quiz, results, onBack, onNewQuiz }: LeaderboardProps) => {
-  // Mock additional participants for demonstration
-  const allResults = [
-    results,
-    {
-      playerName: "Alex Chen",
-      score: Math.floor(Math.random() * quiz.questions.length) + 1,
-      totalQuestions: quiz.questions.length,
-      completedAt: new Date(Date.now() - Math.random() * 3600000).toISOString()
-    },
-    {
-      playerName: "Sarah Johnson", 
-      score: Math.floor(Math.random() * quiz.questions.length) + 1,
-      totalQuestions: quiz.questions.length,
-      completedAt: new Date(Date.now() - Math.random() * 3600000).toISOString()
-    },
-    {
-      playerName: "Mike Rodriguez",
-      score: Math.floor(Math.random() * quiz.questions.length) + 1,
-      totalQuestions: quiz.questions.length,
-      completedAt: new Date(Date.now() - Math.random() * 3600000).toISOString()
-    }
-  ].sort((a, b) => b.score - a.score);
+  const [allResults, setAllResults] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchLeaderboard = async () => {
+      try {
+        const res = await axios.get(`http://localhost:3000/api/quiz/${quiz._id}/leaderboard`);
+        // Add the current user's result if not present
+        let leaderboard = res.data || [];
+        const exists = leaderboard.some((r: any) => r.playerName === results.playerName && r.score === results.score);
+        if (!exists) {
+          leaderboard = [results, ...leaderboard];
+        }
+        setAllResults(leaderboard);
+      } catch (err) {
+        toast.error("Failed to load leaderboard");
+        setAllResults([results]);
+      }
+    };
+    if (quiz && quiz._id) fetchLeaderboard();
+  }, [quiz, results]);
 
   const getRankIcon = (rank: number) => {
     switch (rank) {

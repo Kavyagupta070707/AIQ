@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Loader2, Sparkles, ArrowLeft, Key } from "lucide-react";
 import { toast } from "sonner";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 // import OpenAI from "openai";
 
 interface QuizCreatorProps {
@@ -13,6 +15,7 @@ interface QuizCreatorProps {
 }
 
 const QuizCreator = ({ onBack, onQuizGenerated }: QuizCreatorProps) => {
+  const navigate = useNavigate();
   const [topic, setTopic] = useState("");
   // Get Gemini API key from .env file
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY || "";
@@ -20,7 +23,7 @@ const QuizCreator = ({ onBack, onQuizGenerated }: QuizCreatorProps) => {
 
   // Removed localStorage and input logic for API key
 
-  const generateQuiz = async () => {
+  const generateQuiz = async (e) => {
     if (!topic.trim()) {
       toast.error("Please enter a topic for your quiz");
       return;
@@ -103,8 +106,8 @@ const QuizCreator = ({ onBack, onQuizGenerated }: QuizCreatorProps) => {
         return;
       }
 
+      const user = JSON.parse(localStorage.getItem('user') || '{}');
       const quiz = {
-        id: Math.random().toString(36).substr(2, 9),
         topic,
         questions: quizData.questions.map((q: any, index: number) => ({
           id: index + 1,
@@ -113,12 +116,21 @@ const QuizCreator = ({ onBack, onQuizGenerated }: QuizCreatorProps) => {
           correctAnswer: q.correctAnswer
         })),
         createdAt: new Date().toISOString(),
-        participants: []
+        participants: [],
+        createdBy: user?._id
       };
-
-      setIsGenerating(false);
-      toast.success("Quiz generated successfully!");
-      onQuizGenerated(quiz);
+      e.preventDefault();
+      try {
+        const res = await axios.post("http://localhost:3000/api/quiz", quiz);
+        setIsGenerating(false);
+        toast.success("Quiz generated successfully!");
+        onQuizGenerated(res.data);
+        navigate('/quiz');
+      } catch (err) {
+        setIsGenerating(false);
+        console.error(err);
+        toast.error("Failed to save quiz to backend");
+      }
     } catch (error) {
       setIsGenerating(false);
       console.error("Error generating quiz:", error);
@@ -135,7 +147,7 @@ const QuizCreator = ({ onBack, onQuizGenerated }: QuizCreatorProps) => {
           className="mb-8 self-start"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Home
+          Back to Dashboard
         </Button>
 
         <Card className="shadow-soft w-full">
