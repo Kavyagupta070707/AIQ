@@ -60,7 +60,19 @@ app.get('/api/quiz', async (req, res) => {
         const { createdBy } = req.query;
         if (!createdBy) return res.status(400).json({ error: 'createdBy is required' });
         const quizzes = await Quiz.find({ createdBy });
-        res.json(quizzes);
+        
+        // For each quiz, get the actual participant count from results
+        const quizzesWithParticipants = await Promise.all(
+            quizzes.map(async (quiz) => {
+                const participantCount = await Result.countDocuments({ quizId: quiz._id });
+                return {
+                    ...quiz.toObject(),
+                    participantCount
+                };
+            })
+        );
+        
+        res.json(quizzesWithParticipants);
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
@@ -96,6 +108,13 @@ app.post('/api/quiz/:id/submit', async (req, res) => {
         const quiz = await Quiz.findById(req.params.id);
         if (!quiz) return res.status(404).json({ error: 'Quiz not found' });
         const { userId, playerName, score, totalQuestions, answers, completedAt } = req.body;
+        
+        // Add participant to quiz if not already in the list
+        if (playerName && !quiz.participants.includes(playerName)) {
+            quiz.participants.push(playerName);
+            await quiz.save();
+        }
+        
         const result = await Result.create({
             quizId: quiz._id,
             userId,

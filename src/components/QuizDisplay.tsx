@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, QrCode, Users, Copy, Share2 } from "lucide-react";
+import { ArrowLeft, QrCode, Users, Copy, Share2, Trophy } from "lucide-react";
 import { toast } from "sonner";
 import QRCodeGenerator from "./QRCodeGenerator";
 
@@ -13,12 +13,18 @@ import QRCodeGenerator from "./QRCodeGenerator";
 
 const QuizDisplay = ({ quiz, onBack }: QuizDisplayProps) => {
   const navigate = useNavigate();
+  const quizId = quiz._id || quiz.id;
+  
   const handleStartQuiz = () => {
-    const quizId = quiz._id || quiz.id;
     navigate(`/quiz/${quizId}/take`);
   };
+  
+  const handleViewLeaderboard = () => {
+    navigate(`/quiz/${quizId}/leaderboard`);
+  };
+  
   const [showQRCode, setShowQRCode] = useState(false);
-  const quizUrl = `${window.location.origin}/quiz/${quiz.id}`;
+  const quizUrl = `${window.location.origin}/quiz/${quizId}/take`;
 
   const copyToClipboard = () => {
     navigator.clipboard.writeText(quizUrl);
@@ -82,7 +88,7 @@ const QuizDisplay = ({ quiz, onBack }: QuizDisplayProps) => {
                   <div className="text-sm text-muted-foreground">Questions</div>
                 </div>
                 <div className="text-center p-4 bg-muted rounded-lg">
-                  <div className="text-2xl font-bold text-secondary">{quiz.participants.length}</div>
+                  <div className="text-2xl font-bold text-secondary">{quiz.participantCount || quiz.participants?.length || 0}</div>
                   <div className="text-sm text-muted-foreground">Participants</div>
                 </div>
               </div>
@@ -115,6 +121,14 @@ const QuizDisplay = ({ quiz, onBack }: QuizDisplayProps) => {
                 <Users className="w-4 h-4 mr-2" />
                 Attend Quiz
               </Button>
+              
+              {/* View Leaderboard */}
+              {(quiz.participantCount > 0 || quiz.participants?.length > 0) && (
+                <Button onClick={handleViewLeaderboard} variant="outline" className="w-full border-orange-300 text-orange-600 hover:bg-orange-50">
+                  <Trophy className="w-4 h-4 mr-2" />
+                  View Leaderboard
+                </Button>
+              )}
             </CardContent>
           </Card>
 

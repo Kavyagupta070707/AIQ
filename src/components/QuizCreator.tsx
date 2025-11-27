@@ -30,7 +30,7 @@ const QuizCreator = ({ onBack, onQuizGenerated }: QuizCreatorProps) => {
     }
 
     if (!apiKey.trim()) {
-      toast.error("OpenAI API key is missing. Please set VITE_OPENAI_API_KEY in your .env file.");
+      toast.error("Gemini API key is missing. Please set VITE_GEMINI_API_KEY in your .env file.");
       return;
     }
 

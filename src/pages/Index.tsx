@@ -24,13 +24,18 @@ import QuizCreator from "@/components/QuizCreator";
 import QuizDisplay from "@/components/QuizDisplay";
 import QuizTaker from "@/components/QuizTaker";
 import Leaderboard from "@/components/Leaderboard";
+import Navbar from "@/components/Navbar";
+import LeaderboardPage from "./LeaderboardPage";
 const Index = () => {
   const [authToken, setAuthToken] = useState<string | null>(() => localStorage.getItem('authToken'));
   const [user, setUser] = useState<any>(() => {
     const u = localStorage.getItem('user');
     return u ? JSON.parse(u) : null;
   });
-  const [currentQuiz, setCurrentQuiz] = useState<any>(null);
+  const [currentQuiz, setCurrentQuiz] = useState<any>(() => {
+    const saved = localStorage.getItem('currentQuiz');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [quizResults, setQuizResults] = useState<any>(null);
   const navigate = useNavigate();
 
@@ -43,6 +48,11 @@ const Index = () => {
     else localStorage.removeItem('user');
   }, [user]);
 
+  useEffect(() => {
+    if (currentQuiz) localStorage.setItem('currentQuiz', JSON.stringify(currentQuiz));
+    else localStorage.removeItem('currentQuiz');
+  }, [currentQuiz]);
+
   const handleLoginSuccess = (token: string, userObj: any) => {
     setAuthToken(token);
     setUser(userObj);
@@ -54,25 +64,23 @@ const Index = () => {
     navigate('/');
   };
 
+  const handleNavigate = (path: string) => {
+    navigate(path);
+  };
+
   return (
     <>
-      <div className="absolute top-4 right-4 flex gap-2">
-        {user ? (
-          <>
-            <span className="text-sm">Hello, {user.username}</span>
-            <button onClick={handleLogout} className="text-blue-600 underline text-sm">Logout</button>
-          </>
-        ) : null}
-      </div>
+      <Navbar user={user} onLogout={handleLogout} onNavigate={handleNavigate} />
       <Routes>
         <Route path="/" element={<HeroSection onLogin={() => navigate('/login')} onSignup={() => navigate('/signup')} onLoginSuccess={handleLoginSuccess} />} />
         <Route path="/login" element={<LoginPage onSignupRedirect={() => navigate('/signup')} onLoginSuccess={handleLoginSuccess} />} />
         <Route path="/signup" element={<SignupPage onLoginRedirect={() => navigate('/login')} />} />
-        <Route path="/dashboard" element={user ? <Dashboard user={user} authToken={authToken} onCreateQuiz={() => navigate('/create')} onShowQuiz={setCurrentQuiz} /> : <Navigate to="/login" />} />
+        <Route path="/dashboard" element={user ? <Dashboard user={user} authToken={authToken} onCreateQuiz={() => navigate('/create')} onShowQuiz={setCurrentQuiz} onNavigate={handleNavigate} /> : <Navigate to="/login" />} />
         <Route path="/create" element={user ? <QuizCreator onBack={() => navigate('/dashboard')} onQuizGenerated={setCurrentQuiz} /> : <Navigate to="/login" />} />
         <Route path="/quiz" element={currentQuiz ? <QuizDisplay quiz={currentQuiz} onBack={() => navigate('/dashboard')} /> : <Navigate to="/dashboard" />} />
         <Route path="/take" element={currentQuiz ? <QuizTaker quiz={currentQuiz} onBack={() => navigate('/quiz')} onComplete={setQuizResults} /> : <Navigate to="/dashboard" />} />
         <Route path="/quiz/:id/take" element={<QuizTakerWrapper onComplete={setQuizResults} />} />
+        <Route path="/quiz/:id/leaderboard" element={<LeaderboardPage />} />
         <Route path="/leaderboard" element={currentQuiz && quizResults ? <Leaderboard quiz={currentQuiz} results={quizResults} onBack={() => navigate('/take')} onNewQuiz={() => navigate('/create')} /> : <Navigate to="/dashboard" />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>

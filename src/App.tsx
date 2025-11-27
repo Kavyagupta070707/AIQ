@@ -33,6 +33,8 @@ import QuizDisplay from "@/components/QuizDisplay";
 import QuizTaker from "@/components/QuizTaker";
 import Leaderboard from "@/components/Leaderboard";
 import NotFound from "./pages/NotFound";
+import Navbar from "@/components/Navbar";
+import LeaderboardPage from "./pages/LeaderboardPage";
 
 const queryClient = new QueryClient();
 
@@ -42,7 +44,10 @@ const App = () => {
     const u = localStorage.getItem('user');
     return u ? JSON.parse(u) : null;
   });
-  const [currentQuiz, setCurrentQuiz] = useState<any>(null);
+  const [currentQuiz, setCurrentQuiz] = useState<any>(() => {
+    const saved = localStorage.getItem('currentQuiz');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [quizResults, setQuizResults] = useState<any>(null);
   // useNavigate can't be used outside Router, so use window.location for redirects in handlers
 
@@ -55,6 +60,11 @@ const App = () => {
     else localStorage.removeItem('user');
   }, [user]);
 
+  useEffect(() => {
+    if (currentQuiz) localStorage.setItem('currentQuiz', JSON.stringify(currentQuiz));
+    else localStorage.removeItem('currentQuiz');
+  }, [currentQuiz]);
+
   const handleLoginSuccess = (token: string, userObj: any) => {
     setAuthToken(token);
     setUser(userObj);
@@ -66,29 +76,27 @@ const App = () => {
     window.location.href = '/';
   };
 
+  const handleNavigate = (path: string) => {
+    window.location.href = path;
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
         <Sonner />
         <BrowserRouter>
-          <div className="absolute top-4 right-4 flex gap-2">
-            {user ? (
-              <>
-                <span className="text-sm">Hello, {user.username}</span>
-                <button onClick={handleLogout} className="text-blue-600 underline text-sm">Logout</button>
-              </>
-            ) : null}
-          </div>
+          <Navbar user={user} onLogout={handleLogout} onNavigate={handleNavigate} />
           <Routes>
             <Route path="/" element={<HeroSection onLogin={() => window.location.href='/login'} onSignup={() => window.location.href='/signup'} onLoginSuccess={handleLoginSuccess} />} />
             <Route path="/login" element={<LoginPage onSignupRedirect={() => window.location.href='/signup'} onLoginSuccess={handleLoginSuccess} />} />
             <Route path="/signup" element={<SignupPage onLoginRedirect={() => window.location.href='/login'} />} />
-            <Route path="/dashboard" element={user ? <Dashboard user={user} authToken={authToken} onCreateQuiz={() => window.location.href='/create'} onShowQuiz={setCurrentQuiz} /> : <Navigate to="/login" />} />
+            <Route path="/dashboard" element={user ? <Dashboard user={user} authToken={authToken} onCreateQuiz={() => window.location.href='/create'} onShowQuiz={setCurrentQuiz} onNavigate={handleNavigate} /> : <Navigate to="/login" />} />
             <Route path="/create" element={user ? <QuizCreator onBack={() => window.location.href='/dashboard'} onQuizGenerated={setCurrentQuiz} /> : <Navigate to="/login" />} />
             <Route path="/quiz" element={currentQuiz ? <QuizDisplay quiz={currentQuiz} onBack={() => window.location.href='/dashboard'} /> : <Navigate to="/dashboard" />} />
             <Route path="/take" element={currentQuiz ? <QuizTaker quiz={currentQuiz} onBack={() => window.location.href='/quiz'} onComplete={setQuizResults} /> : <Navigate to="/dashboard" />} />
             <Route path="/quiz/:id/take" element={<QuizTakerWrapper onComplete={setQuizResults} />} />
+            <Route path="/quiz/:id/leaderboard" element={<LeaderboardPage />} />
             <Route path="/leaderboard" element={currentQuiz && quizResults ? <Leaderboard quiz={currentQuiz} results={quizResults} onBack={() => window.location.href='/take'} onNewQuiz={() => window.location.href='/create'} /> : <Navigate to="/dashboard" />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
