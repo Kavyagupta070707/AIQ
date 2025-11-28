@@ -29,14 +29,14 @@ const Navbar = ({ user, onLogout, onNavigate }: NavbarProps) => {
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-gradient-to-r from-purple-600 via-pink-500 to-orange-400 backdrop-blur supports-[backdrop-filter]:bg-gradient-to-r supports-[backdrop-filter]:from-purple-600/95 supports-[backdrop-filter]:via-pink-500/95 supports-[backdrop-filter]:to-orange-400/95">
+    <nav className="sticky top-0 z-50 w-full border-b border-slate-800 bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 backdrop-blur supports-[backdrop-filter]:bg-gradient-to-r supports-[backdrop-filter]:from-slate-900/95 supports-[backdrop-filter]:via-blue-900/95 supports-[backdrop-filter]:to-indigo-900/95 shadow-lg">
       <div className="container mx-auto px-4 py-3">
         <div className="flex items-center justify-between">
           {/* Logo/Brand */}
           <div className="flex items-center space-x-2">
             <div className="flex items-center space-x-2 cursor-pointer" onClick={() => onNavigate?.('/dashboard')}>
-              <div className="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-lg">
-                <span className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">
+              <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-lg flex items-center justify-center shadow-lg">
+                <span className="text-2xl font-bold text-white">
                   AI
                 </span>
               </div>
@@ -50,7 +50,7 @@ const Navbar = ({ user, onLogout, onNavigate }: NavbarProps) => {
           <div className="hidden md:flex items-center space-x-2">
             <Button
               variant="ghost"
-              className="text-white hover:bg-white/20"
+              className="text-slate-300 hover:bg-slate-800/50 hover:text-white"
               onClick={() => onNavigate?.('/dashboard')}
             >
               <Home className="w-4 h-4 mr-2" />
@@ -58,7 +58,7 @@ const Navbar = ({ user, onLogout, onNavigate }: NavbarProps) => {
             </Button>
             <Button
               variant="ghost"
-              className="text-white hover:bg-white/20"
+              className="text-slate-300 hover:bg-slate-800/50 hover:text-white"
               onClick={() => onNavigate?.('/create')}
             >
               <PlusCircle className="w-4 h-4 mr-2" />
@@ -72,16 +72,16 @@ const Navbar = ({ user, onLogout, onNavigate }: NavbarProps) => {
               <span className="text-sm font-medium text-white">
                 {user.username}
               </span>
-              <span className="text-xs text-white/80">Quiz Master</span>
+              <span className="text-xs text-cyan-400">Quiz Master</span>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="relative h-10 w-10 rounded-full ring-2 ring-white/50 hover:ring-white"
+                  className="relative h-10 w-10 rounded-full ring-2 ring-cyan-500/50 hover:ring-cyan-400"
                 >
                   <Avatar className="h-10 w-10">
-                    <AvatarFallback className="bg-gradient-to-br from-purple-600 to-pink-500 text-white font-semibold">
+                    <AvatarFallback className="bg-gradient-to-br from-cyan-500 to-blue-500 text-white font-semibold">
                       {getInitials(user.username)}
                     </AvatarFallback>
                   </Avatar>

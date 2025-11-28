@@ -139,29 +139,29 @@ const QuizCreator = ({ onBack, onQuizGenerated }: QuizCreatorProps) => {
   };
 
   return (
-    <div className="bg-purple-300 min-h-screen h-screen w-full flex items-center justify-center bg-background">
+    <div className="min-h-screen h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900">
       <div className="w-full max-w-2xl px-4 flex flex-col items-center justify-center">
         <Button 
           variant="ghost" 
           onClick={onBack}
-          className="mb-8 self-start"
+          className="mb-8 self-start text-slate-300 hover:text-white"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Dashboard
         </Button>
 
-        <Card className="shadow-soft w-full">
+        <Card className="shadow-xl bg-slate-800/50 backdrop-blur-md border-slate-700 w-full">
           <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+            <CardTitle className="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-400 bg-clip-text text-transparent">
               Create Your Quiz
             </CardTitle>
-            <p className="text-muted-foreground">
+            <p className="text-slate-400">
               Enter any topic and let AI generate engaging questions for you
             </p>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="topic" className="text-base font-medium">
+              <Label htmlFor="topic" className="text-base font-medium text-slate-300">
                 Quiz Topic
               </Label>
               <Input
@@ -169,7 +169,7 @@ const QuizCreator = ({ onBack, onQuizGenerated }: QuizCreatorProps) => {
                 placeholder="e.g., Machine Learning, History of Rome, Climate Change..."
                 value={topic}
                 onChange={(e) => setTopic(e.target.value)}
-                className="text-lg py-3"
+                className="text-lg py-3 bg-slate-900/50 border-slate-600 text-white placeholder:text-slate-500"
                 disabled={isGenerating}
               />
             </div>
@@ -177,9 +177,8 @@ const QuizCreator = ({ onBack, onQuizGenerated }: QuizCreatorProps) => {
             <Button 
               onClick={generateQuiz}
               disabled={isGenerating || !topic.trim() || !apiKey.trim()}
-              variant="hero"
               size="lg"
-              className="w-full"
+              className="w-full bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-semibold"
             >
               {isGenerating ? (
                 <>
@@ -195,9 +194,9 @@ const QuizCreator = ({ onBack, onQuizGenerated }: QuizCreatorProps) => {
             </Button>
 
             {/* Preview of what will be generated */}
-            <div className="bg-muted rounded-lg p-4 space-y-2">
-              <h4 className="font-semibold text-sm">What you'll get:</h4>
-              <ul className="text-sm text-muted-foreground space-y-1">
+            <div className="bg-slate-900/50 rounded-lg p-4 space-y-2">
+              <h4 className="font-semibold text-sm text-white">What you'll get:</h4>
+              <ul className="text-sm text-slate-400 space-y-1">
                 <li>• 10 AI-generated questions</li>
                 <li>• Multiple choice options</li>
                 <li>• Unique QR code for sharing</li>
