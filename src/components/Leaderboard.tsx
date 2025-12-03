@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Medal, Award, ArrowLeft, Share2 } from "lucide-react";
+import { Trophy, Medal, Award, ArrowLeft, Share2, CheckCircle, XCircle, Eye } from "lucide-react";
 import { toast } from "sonner";
 import axios from "axios";
 
@@ -15,6 +15,7 @@ interface LeaderboardProps {
 
 const Leaderboard = ({ quiz, results, onBack, onNewQuiz }: LeaderboardProps) => {
   const [allResults, setAllResults] = useState<any[]>([]);
+  const [showAnswers, setShowAnswers] = useState(false);
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
@@ -91,6 +92,84 @@ const Leaderboard = ({ quiz, results, onBack, onNewQuiz }: LeaderboardProps) => 
           Take Quiz Again
         </Button>
 
+        {/* Answer Review Section */}
+        {showAnswers && (
+          <div className="w-full mb-8">
+            <Card className="shadow-xl bg-slate-800/50 backdrop-blur-md border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-2xl font-bold text-white flex items-center gap-2">
+                  <Eye className="w-6 h-6 text-cyan-400" />
+                  Answer Review
+                </CardTitle>
+                <p className="text-slate-400">Your answers vs correct answers</p>
+              </CardHeader>
+              <CardContent className="max-h-[500px] overflow-y-auto">
+                <div className="space-y-4">
+                  {quiz.questions.map((question: any, index: number) => {
+                    const userAnswer = results.answers[index];
+                    const isCorrect = userAnswer === question.correctAnswer;
+                    
+                    return (
+                      <div 
+                        key={index} 
+                        className={`p-4 rounded-lg border-2 ${
+                          isCorrect 
+                            ? 'bg-emerald-500/10 border-emerald-500/50' 
+                            : 'bg-red-500/10 border-red-500/50'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3 mb-3">
+                          {isCorrect ? (
+                            <CheckCircle className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-1" />
+                          ) : (
+                            <XCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-1" />
+                          )}
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-white mb-2">
+                              Q{index + 1}. {question.question}
+                            </h4>
+                          </div>
+                        </div>
+                        
+                        <div className="ml-8 space-y-2">
+                          {question.options.map((option: string, optIndex: number) => {
+                            const isUserAnswer = userAnswer === optIndex;
+                            const isCorrectAnswer = question.correctAnswer === optIndex;
+                            
+                            return (
+                              <div
+                                key={optIndex}
+                                className={`p-3 rounded-lg text-sm ${
+                                  isCorrectAnswer
+                                    ? 'bg-emerald-500/20 border-2 border-emerald-500/50 text-emerald-300'
+                                    : isUserAnswer
+                                    ? 'bg-red-500/20 border-2 border-red-500/50 text-red-300'
+                                    : 'bg-slate-900/50 text-slate-400'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold">{String.fromCharCode(65 + optIndex)}.</span>
+                                  <span>{option}</span>
+                                  {isCorrectAnswer && (
+                                    <Badge className="ml-auto bg-emerald-500 text-white text-xs">Correct</Badge>
+                                  )}
+                                  {isUserAnswer && !isCorrectAnswer && (
+                                    <Badge className="ml-auto bg-red-500 text-white text-xs">Your Answer</Badge>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         <div className="grid lg:grid-cols-3 gap-8 w-full">
           {/* Personal Results */}
           <div className="lg:col-span-1 flex flex-col justify-start">
@@ -117,6 +196,14 @@ const Leaderboard = ({ quiz, results, onBack, onNewQuiz }: LeaderboardProps) => 
                 </div>
 
                 <div className="space-y-3">
+                  <Button 
+                    onClick={() => setShowAnswers(!showAnswers)} 
+                    variant="outline" 
+                    className="w-full border-cyan-500/50 text-cyan-400 hover:bg-cyan-500/10"
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    {showAnswers ? "Hide" : "View"} Answers
+                  </Button>
                   <Button onClick={shareResults} variant="outline" className="w-full border-slate-600 text-slate-300 hover:bg-slate-700">
                     <Share2 className="w-4 h-4 mr-2" />
                     Share Results

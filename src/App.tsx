@@ -35,6 +35,7 @@ import Leaderboard from "@/components/Leaderboard";
 import NotFound from "./pages/NotFound";
 import Navbar from "@/components/Navbar";
 import LeaderboardPage from "./pages/LeaderboardPage";
+import ResultsPage from "./pages/ResultsPage";
 
 const queryClient = new QueryClient();
 
@@ -97,6 +98,7 @@ const App = () => {
             <Route path="/take" element={currentQuiz ? <QuizTaker quiz={currentQuiz} onBack={() => window.location.href='/quiz'} onComplete={setQuizResults} /> : <Navigate to="/dashboard" />} />
             <Route path="/quiz/:id/take" element={<QuizTakerWrapper onComplete={setQuizResults} />} />
             <Route path="/quiz/:id/leaderboard" element={<LeaderboardPage />} />
+            <Route path="/results/:id" element={user ? <ResultsPage /> : <Navigate to="/login" />} />
             <Route path="/leaderboard" element={currentQuiz && quizResults ? <Leaderboard quiz={currentQuiz} results={quizResults} onBack={() => window.location.href='/take'} onNewQuiz={() => window.location.href='/create'} /> : <Navigate to="/dashboard" />} />
             <Route path="*" element={<NotFound />} />
           </Routes>

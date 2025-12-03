@@ -13,7 +13,7 @@ app.use(cors());
 app.use('/api/auth', authRoutes);
 
 // Connect to MongoDB
-mongoose.connect('mongodb://localhost:27017/aiquiz', {
+mongoose.connect('mongodb+srv://kavyagupta0105:Kavyai10%401505@cluster0.r8nawig.mongodb.net/?appName=Cluster0', {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 });
@@ -140,6 +140,17 @@ app.get('/api/quiz/:id/leaderboard', async (req, res) => {
             .sort({ score: -1, completedAt: 1 })
             .limit(50);
         res.json(results);
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// Get a single result by ID
+app.get('/api/results/:id', async (req, res) => {
+    try {
+        const result = await Result.findById(req.params.id);
+        if (!result) return res.status(404).json({ error: 'Result not found' });
+        res.json(result);
     } catch (err) {
         res.status(400).json({ error: err.message });
     }

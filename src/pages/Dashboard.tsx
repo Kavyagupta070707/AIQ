@@ -185,16 +185,9 @@ const Dashboard = ({ user, authToken, onCreateQuiz, onShowQuiz, onNavigate }) =>
               ) : (
                 <div className="space-y-2 max-h-[400px] overflow-y-auto">
                   {attendedQuizzes.map((result) => {
-                    const handleQuizClick = async () => {
-                      try {
-                        const quizRes = await axios.get(`http://localhost:3000/api/quiz/${result.quizId}`, {
-                          headers: { Authorization: `Bearer ${authToken}` }
-                        });
-                        onShowQuiz(quizRes.data);
-                        onNavigate('/quiz');
-                      } catch (err) {
-                        console.error('Failed to fetch quiz:', err);
-                      }
+                    const handleQuizClick = () => {
+                      // Navigate to results page with quiz ID and result ID
+                      onNavigate(`/results/${result._id}`);
                     };
                     
                     const percentage = Math.round((result.score / result.totalQuestions) * 100);
